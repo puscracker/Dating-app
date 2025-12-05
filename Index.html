@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>💖 LoveMatch - Mobile Dating</title>
+    
+    <!-- Mobile Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#ff4b6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Icons -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💖</text></svg>">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Swipe.js for mobile gestures -->
+    <script src="https://cdn.jsdelivr.net/npm/swipejs@2.2.14/swipe.min.js"></script>
+    
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        :root {
+            --primary: #ff4b6e;
+            --primary-dark: #e63956;
+            --secondary: #8a2be2;
+            --dark: #1a1a1a;
+            --light: #ffffff;
+            --gray: #8e8e93;
+            --light-gray: #f2f2f7;
+            --success: #34c759;
+            --danger: #ff3b30;
+            --warning: #ff9500;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --radius: 24px;
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000;
+            color: var(--light);
+            position: fixed;
+        }
+        
+        /* ===== LOADING SCREEN ===== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s;
+        }
+        
+        .loading-logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* ===== AUTH SCREENS ===== */
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .auth-logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .auth-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        
+        .auth-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: var(--radius);
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+        }
+        
+        .auth-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .auth-btn.primary {
+            background: var(--light);
+            color: var(--primary);
+        }
+        
+        .auth-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: var(--light);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .auth-divider span {
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        
+        /* ===== SIGNUP MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        
+        .signup-modal {
+            background: var(--light);
+            width: 100%;
+            max-width: 400px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: var(--dark);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+            text-align: center;
+            position: relative;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .photo-upload-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .photo-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--light-gray);
+            margin: 0 auto 15px;
+            overflow: hidden;
+            position: relative;
+            border: 4px solid var(--light);
+            box-shadow: var(--shadow);
+        }
+        
+        .photo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--light-gray);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: var(--light);
+        }
+        
+        .form-input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        .age-slider {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--light-gray);
+            border-radius: 2px;
+            margin-top: 20px;
+        }
+        
+        .age-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .age-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 10px;
+        }
+        
+        .gender-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .gender-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .gender-option.active {
+            border-color: var(--primary);
+            background: rgba(255,75,110,0.1);
+            color: var(--primary);
+        }
+        
+        .interests-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .interest-tag {
+            padding: 10px 20px;
+            background: var(--light-gray);
+            border-radius: 50px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .interest-tag.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .modal-submit {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        /* ===== MAIN APP ===== */
+        .main-app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark);
+            display: none;
+        }
+        
+        .main-app.active {
+            display: block;
+        }
+        
+        /* ===== DISCOVER SCREEN (Tinder-like) ===== */
+        .discover-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+        
+        .profile-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 120px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--light);
+            transform-style: preserve-3d;
+            transition: transform 0.3s, opacity 0.3s;
+            touch-action: pan-y;
+            -webkit-user-drag: none;
+        }
+        
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        
+        .profile-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
+        
+        .profile-name {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        
+        .profile-details {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .profile-bio {
+            margin-top: 15px;
+            font-size: 16px;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+        
+        .swipe-indicator {
+            position: absolute;
+            top: 40px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            border: 5px solid;
+            opacity: 0;
+            transform: rotate(-30deg);
+            z-index: 100;
+        }
+        
+        .swipe-like {
+            left: 20px;
+            color: var(--success);
+            border-color: var(--success);
+            background: rgba(52,199,89,0.2);
+        }
+        
+        .swipe-nope {
+            right: 20px;
+            color: var(--danger);
+            border-color: var(--danger);
+            background: rgba(255,59,48,0.2);
+        }
+        
+        .discover-actions {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .action-nope {
+            background: var(--light);
+            color: var(--danger);
+        }
+        
+        .action-super-like {
+            background: var(--light);
+            color: #1da1f2;
+        }
+        
+        .action-like {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* ===== MATCHES SCREEN ===== */
+        .matches-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--light);
+            color: var(--dark);
+            padding-top: 60px;
+            padding-bottom: 80px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .matches-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .matches-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        
+        .matches-subtitle {
+            color: var(--gray);
+            font-size: 16px;
+        }
+        
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+        }
+        
+        .match-item {
+            aspect-ratio: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .match-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .match-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* ===== MESSAGES SCREEN ===== */
+        .messages-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--light);
+            color: var(--dark);
+            padding-top: 60px;
+            padding-bottom: 80px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .messages-list {
+            padding: 10px;
+        }
+        
+        .message-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--light-gray);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .message-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .message-name {
+            font-weight: 700;
+            font-size: 17px;
+        }
+        
+        .message-time {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        .message-preview {
+            color: var(--gray);
+            font-size: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .unread-badge {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        
+        /* ===== PROFILE SCREEN ===== */
+        .profile-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--light);
+            color: var(--dark);
+            padding-top: 60px;
+            padding-bottom: 80px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .profile-header {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-name-large {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        
+        .profile-location {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .profile-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .profile-bio-text {
+            line-height: 1.6;
+            color: var(--dark);
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        
+        .photo-item {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-actions {
+            padding: 20px;
+        }
+        
+        .profile-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 12px;
+            border: 2px solid var(--light-gray);
+            background: var(--light);
+            color: var(--dark);
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        .profile-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .profile-btn.danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+        
+        /* ===== BOTTOM NAVIGATION ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: var(--light);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: var(--safe-bottom);
+            border-top: 1px solid var(--light-gray);
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--gray);
+            flex: 1;
+            height: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .nav-badge {
+            position: absolute;
+            top: -5px;
+            right: calc(50% - 15px);
+            background: var(--danger);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* ===== CHAT SCREEN ===== */
+        .chat-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--light);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            background: var(--light);
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .chat-back {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .chat-info {
+            flex: 1;
+        }
+        
+        .chat-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--dark);
+        }
+        
+        .chat-status {
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message-bubble {
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 20px;
+            position: relative;
+            animation: messageIn 0.3s ease;
+        }
+        
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-bubble.sent {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message-bubble.received {
+            background: var(--light-gray);
+            color: var(--dark);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .chat-input-area {
+            padding: 15px 20px;
+            background: var(--light);
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid var(--light-gray);
+            border-radius: 25px;
+            font-size: 16px;
+            background: var(--light);
+            outline: none;
+        }
+        
+        .chat-send {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        /* ===== NOTIFICATIONS ===== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            padding: 20px;
+            background: var(--light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 2000;
+            animation: slideDown 0.3s ease;
+            color: var(--dark);
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .notification-icon {
+            font-size: 24px;
+        }
+        
+        .notification.success .notification-icon {
+            color: var(--success);
+        }
+        
+        .notification.error .notification-icon {
+            color: var(--danger);
+        }
+        
+        .notification.info .notification-icon {
+            color: var(--primary);
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--gray);
+            cursor: pointer;
+        }
+        
+        /* ===== UTILITIES ===== */
+        .hidden {
+            display: none !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 360px) {
+            .auth-title {
+                font-size: 28px;
+            }
+            
+            .action-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+        }
+        
+        /* iPhone X+ notch support */
+        @supports (padding: max(0px)) {
+            .main-app {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">💖</div>
+        <div class="loading-text">Loading LoveMatch...</div>
+    </div>
+
+    <!-- Authentication Screen -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-header">
+            <div class="auth-logo">💖</div>
+            <h1 class="auth-title">LoveMatch</h1>
+            <p class="auth-subtitle">Find your perfect match today</p>
+        </div>
+        
+        <div class="auth-buttons">
+            <button class="auth-btn primary touch-feedback" onclick="showSignupModal()">
+                <i class="fas fa-user-plus"></i>
+                Create Account
+            </button>
+            
+            <div class="auth-divider">
+                <span>Already have an account?</span>
+            </div>
+            
+            <button class="auth-btn secondary touch-feedback" onclick="quickLogin()">
+                <i class="fas fa-sign-in-alt"></i>
+                Quick Login
+            </button>
+            
+            <button class="auth-btn secondary touch-feedback" onclick="socialLogin('google')">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </button>
+            
+            <button class="auth-btn secondary touch-feedback" onclick="socialLogin('facebook')">
+                <i class="fab fa-facebook"></i>
+                Continue with Facebook
+            </button>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal-overlay" id="signupModal">
+        <div class="signup-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Account</h2>
+                <button class="modal-close" onclick="closeSignupModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="photo-upload-area">
+                    <div class="photo-circle">
+                        <img src="https://via.placeholder.com/120x120?text=Add+Photo" class="photo-preview" id="userPhotoPreview">
+                    </div>
+                    <button class="upload-btn touch-feedback" onclick="openCamera()">
+                        <i class="fas fa-camera"></i> Take Photo
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="userName" placeholder="Your Name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="userEmail" placeholder="you@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="userPassword" placeholder="••••••••" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Age: <span id="ageDisplay">25</span></label>
+                    <input type="range" class="age-slider" id="ageSlider" min="18" max="65" value="25" oninput="updateAgeDisplay()">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <div class="gender-selector">
+                        <div class="gender-option touch-feedback" onclick="selectGender('male')" id="genderMale">Male</div>
+                        <div class="gender-option touch-feedback active" onclick="selectGender('female')" id="genderFemale">Female</div>
+                        <div class="gender-option touch-feedback" onclick="selectGender('other')" id="genderOther">Other</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Interests</label>
+                    <div class="interests-grid">
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Travel</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Music</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Food</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Sports</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Movies</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Art</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Fitness</div>
+                        <div class="interest-tag touch-feedback" onclick="toggleInterest(this)">Technology</div>
+                    </div>
+                </div>
+                
+                <button class="modal-submit touch-feedback" onclick="completeSignup()">
+                    Create Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="main-app" id="mainApp">
+        <!-- Discover Screen -->
+        <div class="discover-screen" id="discoverScreen">
+            <div class="swipe-indicator swipe-like" id="swipeLike">LIKE</div>
+            <div class="swipe-indicator swipe-nope" id="swipeNope">NOPE</div>
+            
+            <!-- Profile cards will be injected here -->
+            <div class="profile-card" id="currentProfile">
+                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" class="profile-image" id="profileImage">
+                <div class="profile-info">
+                    <h2 class="profile-name" id="profileName">Alex, 28</h2>
+                    <div class="profile-details">
+                        <span>📍 2 miles away</span>
+                        <span>👩‍🎓 Designer</span>
+                    </div>
+                    <p class="profile-bio" id="profileBio">Love hiking, coffee, and photography. Looking for someone to explore the world with.</p>
+                </div>
+            </div>
+            
+            <div class="discover-actions">
+                <button class="action-btn action-nope touch-feedback" onclick="swipeLeft()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="action-btn action-super-like touch-feedback" onclick="superLike()">
+                    <i class="fas fa-star"></i>
+                </button>
+                <button class="action-btn action-like touch-feedback" onclick="swipeRight()">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Matches Screen -->
+        <div class="matches-screen" id="matchesScreen">
+            <div class="matches-header">
+                <h2 class="matches-title">Your Matches</h2>
+                <p class="matches-subtitle">People who like you back</p>
+            </div>
+            <div class="matches-grid" id="matchesGrid">
+                <!-- Matches will be injected here -->
+            </div>
+        </div>
+
+        <!-- Messages Screen -->
+        <div class="messages-screen" id="messagesScreen">
+            <div class="messages-list" id="messagesList">
+                <!-- Messages will be injected here -->
+            </div>
+        </div>
+
+        <!-- Profile Screen -->
+        <div class="profile-screen" id="profileScreen">
+            <div class="profile-header">
+                <img src="https://via.placeholder.com/100x100?text=You" class="profile-avatar" id="myAvatar">
+                <h2 class="profile-name-large" id="myName">Loading...</h2>
+                <div class="profile-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="myLocation">Location</span>
+                </div>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="myMatches">0</div>
+                    <div class="stat-label">Matches</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="myLikes">0</div>
+                    <div class="stat-label">Likes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="myVisits">0</div>
+                    <div class="stat-label">Visits</div>
+                </div>
+            </div>
+            
+            <div class="profile-section">
+                <h3 class="section-title">About Me</h3>
+                <p class="profile-bio-text" id="myBio">Tell people about yourself...</p>
+            </div>
+            
+            <div class="profile-section">
+                <h3 class="section-title">My Photos</h3>
+                <div class="photos-grid" id="myPhotosGrid">
+                    <!-- Photos will be injected here -->
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="profile-btn primary touch-feedback" onclick="editProfile()">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+                <button class="profile-btn touch-feedback" onclick="showSettings()">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="profile-btn danger touch-feedback" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="showScreen('discover')" data-screen="discover">
+                <i class="fas fa-fire nav-icon"></i>
+                <span class="nav-label">Discover</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showScreen('matches')" data-screen="matches">
+                <i class="fas fa-heart nav-icon"></i>
+                <span class="nav-label">Matches</span>
+                <div class="nav-badge" id="matchesBadge">3</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showScreen('messages')" data-screen="messages">
+                <i class="fas fa-comments nav-icon"></i>
+                <span class="nav-label">Messages</span>
+                <div class="nav-badge" id="messagesBadge">5</div>
+            </a>
+            <a href="#" class="nav-item" onclick="showScreen('profile')" data-screen="profile">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-label">Profile</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div class="chat-screen" id="chatScreen">
+        <div class="chat-header">
+            <button class="chat-back" onclick="closeChat()">←</button>
+            <img src="https://via.placeholder.com/50x50" class="chat-avatar" id="chatAvatar">
+            <div class="chat-info">
+                <div class="chat-name" id="chatName">Alex</div>
+                <div class="chat-status" id="chatStatus">Online</div>
+            </div>
+        </div>
+        
+        <div class="chat-body" id="chatBody">
+            <!-- Messages will be injected here -->
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." onkeypress="handleChatKeypress(event)">
+            <button class="chat-send touch-feedback" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div class="notification-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title" id="notificationTitle">Notification</div>
+            <div class="notification-message" id="notificationMessage">This is a notification</div>
+        </div>
+        <button class="notification-close" onclick="closeNotification()">×</button>
+    </div>
+
+    <!-- Hidden Camera Input -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleCameraPhoto(event)">
+    
+    <script>
+        // ===== MOBILE APP STATE =====
+        const appState = {
+            isLoggedIn: false,
+            currentUser: null,
+            currentScreen: 'discover',
+            profiles: [],
+            matches: [],
+            messages: [],
+            chatPartner: null,
+            swipePosition: { x: 0, y: 0 }
+        };
+
+        // ===== MOBILE INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading screen after 2 seconds
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    
+                    // Check if user is already logged in (simulate)
+                    const savedUser = localStorage.getItem('loveMatchUser');
+                    if (savedUser) {
+                        appState.currentUser = JSON.parse(savedUser);
+                        appState.isLoggedIn = true;
+                        showMainApp();
+                    }
+                }, 300);
+            }, 2000);
+            
+            // Initialize touch events for swipe
+            initSwipeGestures();
+            
+            // Load demo data
+            loadDemoData();
+            
+            // Add touch feedback to all buttons
+            document.querySelectorAll('button, .touch-feedback').forEach(btn => {
+                btn.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                });
+                btn.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+            
+            // Handle back button on Android
+            document.addEventListener('backbutton', handleBackButton, false);
+        });
+
+        // ===== AUTHENTICATION =====
+        function showSignupModal() {
+            document.getElementById('signupModal').classList.add('active');
+        }
+
+        function closeSignupModal() {
+            document.getElementById('signupModal').classList.remove('active');
+        }
+
+        function updateAgeDisplay() {
+            const age = document.getElementById('ageSlider').value;
+            document.getElementById('ageDisplay').textContent = age;
+        }
+
+        function selectGender(gender) {
+            // Update UI
+            document.querySelectorAll('.gender-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            document.getElementById('gender' + gender.charAt(0).toUpperCase() + gender.slice(1)).classList.add('active');
+        }
+
+        function toggleInterest(element) {
+            element.classList.toggle('active');
+        }
+
+        function openCamera() {
+            document.getElementById('cameraInput').click();
+        }
+
+        function handleCameraPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('userPhotoPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function completeSignup() {
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                age: document.getElementById('ageSlider').value,
+                gender: document.querySelector('.gender-option.active').textContent.toLowerCase(),
+                photo: document.getElementById('userPhotoPreview').src,
+                interests: Array.from(document.querySelectorAll('.interest-tag.active')).map(tag => tag.textContent)
+            };
+            
+            // Save user
+            localStorage.setItem('loveMatchUser', JSON.stringify(userData));
+            appState.currentUser = userData;
+            appState.isLoggedIn = true;
+            
+            // Close modal and show app
+            closeSignupModal();
+            showMainApp();
+            
+            // Show welcome notification
+            showNotification('Welcome to LoveMatch!', 'Start swiping to find your perfect match.', 'success');
+        }
+
+        function quickLogin() {
+            // Simulate quick login for demo
+            const demoUser = {
+                name: "Demo User",
+                email: "demo@lovematch.com",
+                age: 25,
+                gender: "female",
+                photo: "https://via.placeholder.com/100x100?text=Demo",
+                bio: "Love traveling, coffee, and meeting new people. Looking for meaningful connections.",
+                location: "New York, NY",
+                matches: 12,
+                likes: 47,
+                visits: 123
+            };
+            
+            localStorage.setItem('loveMatchUser', JSON.stringify(demoUser));
+            appState.currentUser = demoUser;
+            appState.isLoggedIn = true;
+            
+            showMainApp();
+            showNotification('Quick Login', 'Welcome back!', 'success');
+        }
+
+        function socialLogin(provider) {
+            showNotification('Social Login', `Connecting with ${provider}...`, 'info');
+            // In production, this would redirect to OAuth flow
+            setTimeout(() => {
+                quickLogin(); // Fallback to demo login
+            }, 1000);
+        }
+
+        // ===== MAIN APP NAVIGATION =====
+        function showMainApp() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainApp').classList.add('active');
+            showScreen('discover');
+            updateProfileScreen();
+        }
+
+        function showScreen(screen) {
+            // Hide all screens
+            document.querySelectorAll('[id$="Screen"]').forEach(screen => {
+                screen.style.display = 'none';
+            });
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-screen="${screen}"]`).classList.add('active');
+            
+            // Show selected screen
+            document.getElementById(screen + 'Screen').style.display = 'block';
+            appState.currentScreen = screen;
+            
+            // Update header title
+            updateHeaderTitle(screen);
+            
+            // Load screen-specific data
+            switch(screen) {
+                case 'matches':
+                    loadMatches();
+                    break;
+                case 'messages':
+                    loadMessages();
+                    break;
+                case 'profile':
+                    updateProfileScreen();
+                    break;
+            }
+        }
+
+        function updateHeaderTitle(screen) {
+            const titles = {
+                'discover': 'Discover',
+                'matches': 'Matches',
+                'messages': 'Messages',
+                'profile': 'Profile'
+            };
+            // You can update a header title element here if needed
+        }
+
+        // ===== SWIPE FUNCTIONALITY =====
+        function initSwipeGestures() {
+            const card = document.getElementById('currentProfile');
+            let startX, startY, moveX, moveY;
+            
+            card.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+            
+            card.addEventListener('touchmove', function(e) {
+                if (!startX || !startY) return;
+                
+                moveX = e.touches[0].clientX - startX;
+                moveY = e.touches[0].clientY - startY;
+                
+                // Update card position
+                card.style.transform = `translate(${moveX}px, ${moveY}px) rotate(${moveX * 0.05}deg)`;
+                
+                // Show swipe indicators
+                if (moveX > 50) {
+                    document.getElementById('swipeLike').style.opacity = Math.min(moveX / 100, 1);
+                    document.getElementById('swipeNope').style.opacity = 0;
+                } else if (moveX < -50) {
+                    document.getElementById('swipeNope').style.opacity = Math.min(-moveX / 100, 1);
+                    document.getElementById('swipeLike').style.opacity = 0;
+                }
+            });
+            
+            card.addEventListener('touchend', function() {
+                if (!moveX) return;
+                
+                // Determine if swipe threshold was reached
+                if (Math.abs(moveX) > 100) {
+                    // Swipe action
+                    if (moveX > 0) {
+                        swipeRight();
+                    } else {
+                        swipeLeft();
+                    }
+                }
+                
+                // Reset card position
+                card.style.transition = 'transform 0.3s';
+                card.style.transform = 'translate(0, 0) rotate(0deg)';
+                
+                // Hide indicators
+                document.getElementById('swipeLike').style.opacity = 0;
+                document.getElementById('swipeNope').style.opacity = 0;
+                
+                // Reset values
+                setTimeout(() => {
+                    card.style.transition = '';
+                    startX = startY = moveX = moveY = null;
+                }, 300);
+            });
+        }
+
+        function swipeLeft() {
+            const card = document.getElementById('currentProfile');
+            card.style.transition = 'transform 0.5s';
+            card.style.transform = 'translate(-500px, 0) rotate(-30deg)';
+            
+            showNotification('Passed', 'You passed on this profile', 'info');
+            
+            setTimeout(() => {
+                loadNextProfile();
+            }, 300);
+        }
+
+        function swipeRight() {
+            const card = document.getElementById('currentProfile');
+            card.style.transition = 'transform 0.5s';
+            card.style.transform = 'translate(500px, 0) rotate(30deg)';
+            
+            showNotification('Liked!', 'You liked this profile', 'success');
+            
+            // Add to matches (simulated)
+            const currentProfile = getCurrentProfileData();
+            if (currentProfile) {
+                appState.matches.push(currentProfile);
+                updateMatchesBadge();
+            }
+            
+            setTimeout(() => {
+                loadNextProfile();
+            }, 300);
+        }
+
+        function superLike() {
+            const card = document.getElementById('currentProfile');
+            card.style.transition = 'transform 0.5s';
+            card.style.transform = 'translate(0, -500px)';
+            
+            showNotification('Super Like!', 'You super liked this profile!', 'success');
+            
+            // Add to matches with priority (simulated)
+            const currentProfile = getCurrentProfileData();
+            if (currentProfile) {
+                currentProfile.superLike = true;
+                appState.matches.unshift(currentProfile);
+                updateMatchesBadge();
+            }
+            
+            setTimeout(() => {
+                loadNextProfile();
+            }, 300);
+        }
+
+        // ===== PROFILE MANAGEMENT =====
+        function loadNextProfile() {
+            // Get next profile from demo data
+            const nextProfile = appState.profiles.shift();
+            if (nextProfile) {
+                updateProfileCard(nextProfile);
+                // Put it back at the end for demo
+                appState.profiles.push(nextProfile);
+            } else {
+                // No more profiles
+                document.getElementById('currentProfile').style.display = 'none';
+                showNotification('No more profiles', 'Check back later for new matches!', 'info');
+            }
+        }
+
+        function updateProfileCard(profile) {
+            const card = document.getElementById('currentProfile');
+            card.style.display = 'block';
+            card.style.transform = 'translate(0, 0) rotate(0deg)';
+            card.style.transition = '';
+            
+            document.getElementById('profileImage').src = profile.image;
+            document.getElementById('profileName').textContent = `${profile.name}, ${profile.age}`;
+            document.getElementById('profileBio').textContent = profile.bio;
+        }
+
+        function getCurrentProfileData() {
+            // Return current profile data based on displayed info
+            return {
+                name: document.getElementById('profileName').textContent.split(',')[0],
+                age: parseInt(document.getElementById('profileName').textContent.split(',')[1]),
+                image: document.getElementById('profileImage').src,
+                bio: document.getElementById('profileBio').textContent,
+                lastActive: 'Recently'
+            };
+        }
+
+        function updateProfileScreen() {
+            if (!appState.currentUser) return;
+            
+            const user = appState.currentUser;
+            document.getElementById('myName').textContent = user.name;
+            document.getElementById('myAvatar').src = user.photo;
+            document.getElementById('myBio').textContent = user.bio || "Tell people about yourself...";
+            document.getElementById('myLocation').textContent = user.location || "Set your location";
+            document.getElementById('myMatches').textContent = user.matches || 0;
+            document.getElementById('myLikes').textContent = user.likes || 0;
+            document.getElementById('myVisits').textContent = user.visits || 0;
+            
+            // Update photos grid
+            const photosGrid = document.getElementById('myPhotosGrid');
+            photosGrid.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.innerHTML = `<img src="${user.photo}" alt="Photo ${i + 1}">`;
+                photosGrid.appendChild(photoItem);
+            }
+        }
+
+        function editProfile() {
+            showNotification('Edit Profile', 'Profile editing coming soon!', 'info');
+        }
+
+        function showSettings() {
+            showNotification('Settings', 'Settings panel coming soon!', 'info');
+        }
+
+        // ===== MATCHES =====
+        function loadMatches() {
+            const matchesGrid = document.getElementById('matchesGrid');
+            matchesGrid.innerHTML = '';
+            
+            appState.matches.forEach((match, index) => {
+                const matchItem = document.createElement('div');
+                matchItem.className = 'match-item touch-feedback';
+                matchItem.onclick = () => openChat(match);
+                matchItem.innerHTML = `
+                    <img src="${match.image}" class="match-image" alt="${match.name}">
+                    <div class="match-overlay">${match.name}</div>
+                `;
+                matchesGrid.appendChild(matchItem);
+            });
+            
+            // If no matches, show message
+            if (appState.matches.length === 0) {
+                matchesGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
+                        <i class="fas fa-heart" style="font-size: 48px; margin-bottom: 20px;"></i>
+                        <p>No matches yet. Start swiping!</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateMatchesBadge() {
+            const badge = document.getElementById('matchesBadge');
+            badge.textContent = appState.matches.length;
+            badge.style.display = appState.matches.length > 0 ? 'flex' : 'none';
+        }
+
+        // ===== MESSAGES & CHAT =====
+        function loadMessages() {
+            const messagesList = document.getElementById('messagesList');
+            messagesList.innerHTML = '';
+            
+            // Demo messages
+            const demoMessages = [
+                { id: 1, name: 'Alex', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80', message: 'Hey there! How are you?', time: '2 min ago', unread: 3 },
+                { id: 2, name: 'Jordan', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80', message: 'Looking forward to our date!', time: '1 hour ago', unread: 1 },
+                { id: 3, name: 'Taylor', avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80', message: 'Thanks for the great conversation!', time: 'Yesterday', unread: 0 }
+            ];
+            
+            demoMessages.forEach(msg => {
+                const messageItem = document.createElement('a');
+                messageItem.className = 'message-item touch-feedback';
+                messageItem.href = '#';
+                messageItem.onclick = (e) => {
+                    e.preventDefault();
+                    openChat(msg);
+                };
+                
+                messageItem.innerHTML = `
+                    <img src="${msg.avatar}" class="message-avatar" alt="${msg.name}">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <div class="message-name">${msg.name}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                        <div class="message-preview">${msg.message}</div>
+                    </div>
+                    ${msg.unread > 0 ? `<div class="unread-badge">${msg.unread}</div>` : ''}
+                `;
+                
+                messagesList.appendChild(messageItem);
+            });
+            
+            // Update badge
+            const totalUnread = demoMessages.reduce((sum, msg) => sum + msg.unread, 0);
+            const badge = document.getElementById('messagesBadge');
+            badge.textContent = totalUnread;
+            badge.style.display = totalUnread > 0 ? 'flex' : 'none';
+        }
+
+        function openChat(partner) {
+            appState.chatPartner = partner;
+            
+            // Update chat header
+            document.getElementById('chatName').textContent = partner.name;
+            document.getElementById('chatAvatar').src = partner.avatar || partner.image;
+            document.getElementById('chatStatus').textContent = 'Online';
+            
+            // Load chat messages
+            loadChatMessages(partner.id);
+            
+            // Show chat screen
+            document.getElementById('chatScreen').style.display = 'flex';
+        }
+
+        function loadChatMessages(partnerId) {
+            const chatBody = document.getElementById('chatBody');
+            chatBody.innerHTML = '';
+            
+            // Demo chat messages
+            const demoChat = [
+                { sender: 'them', message: 'Hey there! How are you doing?', time: '10:30 AM' },
+                { sender: 'me', message: 'I\'m great! Just finished work. How about you?', time: '10:32 AM' },
+                { sender: 'them', message: 'Same here! Ready for the weekend. Any plans?', time: '10:33 AM' },
+                { sender: 'me', message: 'Not yet. Maybe we could grab coffee sometime?', time: '10:35 AM' },
+                { sender: 'them', message: 'I\'d love that! How about Saturday morning?', time: '10:36 AM' }
+            ];
+            
+            demoChat.forEach(msg => {
+                const messageBubble = document.createElement('div');
+                messageBubble.className = `message-bubble ${msg.sender === 'me' ? 'sent' : 'received'}`;
+                messageBubble.innerHTML = `
+                    <div>${msg.message}</div>
+                    <div class="message-time">${msg.time}</div>
+                `;
+                chatBody.appendChild(messageBubble);
+            });
+            
+            // Scroll to bottom
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatBody = document.getElementById('chatBody');
+                
+                // Add sent message
+                const sentBubble = document.createElement('div');
+                sentBubble.className = 'message-bubble sent';
+                sentBubble.innerHTML = `
+                    <div>${message}</div>
+                    <div class="message-time">Just now</div>
+                `;
+                chatBody.appendChild(sentBubble);
+                
+                // Clear input
+                input.value = '';
+                
+                // Scroll to bottom
+                chatBody.scrollTop = chatBody.scrollHeight;
+                
+                // Simulate reply after 1-3 seconds
+                setTimeout(() => {
+                    const replies = [
+                        "That's interesting! Tell me more.",
+                        "I feel the same way!",
+                        "What are you up to this weekend?",
+                        "Sounds like a great plan!",
+                        "I'd love to hear more about that."
+                    ];
+                    
+                    const reply = replies[Math.floor(Math.random() * replies.length)];
+                    
+                    const receivedBubble = document.createElement('div');
+                    receivedBubble.className = 'message-bubble received';
+                    receivedBubble.innerHTML = `
+                        <div>${reply}</div>
+                        <div class="message-time">Just now</div>
+                    `;
+                    chatBody.appendChild(receivedBubble);
+                    
+                    // Scroll to bottom
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, 1000 + Math.random() * 2000);
+            }
+        }
+
+        function handleChatKeypress(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function closeChat() {
+            document.getElementById('chatScreen').style.display = 'none';
+            appState.chatPartner = null;
+        }
+
+        // ===== NOTIFICATIONS =====
+        function showNotification(title, message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const icon = notification.querySelector('.notification-icon i');
+            
+            // Set type
+            notification.className = `notification ${type}`;
+            
+            // Update icon based on type
+            const icons = {
+                'success': 'fa-check-circle',
+                'error': 'fa-exclamation-circle',
+                'info': 'fa-info-circle'
+            };
+            icon.className = `fas ${icons[type]}`;
+            
+            // Update content
+            document.getElementById('notificationTitle').textContent = title;
+            document.getElementById('notificationMessage').textContent = message;
+            
+            // Show notification
+            notification.style.display = 'flex';
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                if (notification.style.display === 'flex') {
+                    notification.style.display = 'none';
+                }
+            }, 3000);
+        }
+
+        function closeNotification() {
+            document.getElementById('notification').style.display = 'none';
+        }
+
+        // ===== DEMO DATA =====
+        function loadDemoData() {
+            // Demo profiles
+            appState.profiles = [
+                {
+                    name: 'Alex',
+                    age: 28,
+                    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+                    bio: 'Love hiking, coffee, and photography. Looking for someone to explore the world with.',
+                    distance: '2 miles'
+                },
+                {
+                    name: 'Jordan',
+                    age: 32,
+                    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+                    bio: 'Software developer who loves jazz, cooking, and weekend road trips.',
+                    distance: '5 miles'
+                },
+                {
+                    name: 'Taylor',
+                    age: 26,
+                    image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+                    bio: 'Art director and museum lover. Enjoy painting, yoga, and trying new restaurants.',
+                    distance: '8 miles'
+                },
+                {
+                    name: 'Riley',
+                    age: 30,
+                    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+                    bio: 'Environmental scientist passionate about sustainability and indie music.',
+                    distance: '12 miles'
+                }
+            ];
+            
+            // Demo matches
+            appState.matches = [
+                {
+                    name: 'Alex',
+                    age: 28,
+                    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80',
+                    lastActive: '2 min ago'
+                },
+                {
+                    name: 'Taylor',
+                    age: 26,
+                    image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80',
+                    lastActive: '1 hour ago'
+                }
+            ];
+            
+            updateMatchesBadge();
+        }
+
+        // ===== UTILITIES =====
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('loveMatchUser');
+                appState.isLoggedIn = false;
+                appState.currentUser = null;
+                
+                // Hide main app, show auth screen
+                document.getElementById('mainApp').classList.remove('active');
+                document.getElementById('authScreen').style.display = 'block';
+                
+                showNotification('Logged out', 'You have been logged out successfully', 'info');
+            }
+        }
+
+        function handleBackButton() {
+            if (document.getElementById('chatScreen').style.display === 'flex') {
+                closeChat();
+            } else if (appState.currentScreen !== 'discover') {
+                showScreen('discover');
+            } else {
+                // Exit app or show confirmation
+                if (confirm('Exit LoveMatch?')) {
+                    navigator.app.exitApp();
+                }
+            }
+        }
+
+        // Simulate Android back button for testing
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                handleBackButton();
+            }
+        });
+
+        // Prevent zoom on double-tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Add to home screen prompt (for PWA)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button (you can add this to your UI)
+            setTimeout(() => {
+                if (deferredPrompt && confirm('Install LoveMatch for better experience?')) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            showNotification('Installed', 'LoveMatch added to home screen!', 'success');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }, 5000);
+        });
+
+        // ===== EXPORT FOR TESTING =====
+        window.app = {
+            state: appState,
+            swipeLeft,
+            swipeRight,
+            superLike,
+            openChat,
+            sendMessage,
+            showNotification,
+            logout
+        };
+    </script>
+</body>
+</html>
